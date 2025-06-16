@@ -2,9 +2,11 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import sqlite3
 
+# Conexão com o banco de dados
 conn = sqlite3.connect("visitantes.db", check_same_thread=False)
 cursor = conn.cursor()
 
+# Criação da tabela se não existir
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS visitantes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,17 +22,27 @@ CREATE TABLE IF NOT EXISTS visitantes (
 """)
 conn.commit()
 
+# Estado dos usuários
 user_state = {}
 
+# Teclado principal
 menu_principal = ReplyKeyboardMarkup(
     [["Novo Cadastro", "Buscar Visitante"]],
     resize_keyboard=True
 )
 
+# Comando /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state[update.effective_chat.id] = {'step': 'menu'}
     await update.message.reply_text("Escolha uma opção:", reply_markup=menu_principal)
 
+# Comando /buscar
+async def buscar_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    user_state[chat_id] = {'step': 'buscar'}
+    await update.message.reply_text("Digite o nome, CPF ou identidade para buscar. Ex: João")
+
+# Lógica principal do bot
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = update.message.text
@@ -98,12 +110,24 @@ Data/Hora: {resultado[8]}"""
         cursor.execute("""
             INSERT INTO visitantes (nome, cpf, identidade, placa, bloco, apartamento, morador)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (state['nome'], state['cpf'], state['identidade'], state['placa'], state['bloco'], state['apartamento'], state['morador']))
+        """, (
+            state['nome'],
+            state['cpf'],
+            state['identidade'],
+            state['placa'],
+            state['bloco'],
+            state['apartamento'],
+            state['morador']
+        ))
         conn.commit()
         user_state[chat_id] = {'step': 'menu'}
         await update.message.reply_text("✅ Cadastro realizado com sucesso!", reply_markup=menu_principal)
 
+# Inicialização do bot
 app = ApplicationBuilder().token("7676763511:AAGpeT2sr3ILgDZHkm70NBmN4gD5aMYNBa8").build()
+
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("buscar", buscar_command))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+
 app.run_polling()
