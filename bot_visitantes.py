@@ -103,7 +103,7 @@ Data/Hora: {resultado[8]}"""
         user_state[chat_id] = {'step': 'menu'}
         await update.message.reply_text("✅ Cadastro realizado com sucesso!", reply_markup=menu_principal)
 
-app = ApplicationBuilder().token("TOKEN").build()
+app = ApplicationBuilder().token("7676763511:AAGpeT2sr3ILgDZHkm70NBmN4gD5aMYNBa8").build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 app.run_polling()
